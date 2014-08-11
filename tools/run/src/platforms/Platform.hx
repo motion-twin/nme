@@ -13,13 +13,11 @@ class Platform
    public static inline var MAC = "MAC";
    public static inline var WINDOWS = "WINDOWS";
    public static inline var ANDROIDVIEW = "ANDROIDVIEW";
-   public static inline var CPPIA = "CPPIA";
 
 
    public static inline var TYPE_WEB = "WEB";
    public static inline var TYPE_DESKTOP = "DESKTOP";
    public static inline var TYPE_MOBILE = "MOBILE";
-   public static inline var TYPE_SCRIPT = "SCRIPT";
 
    public var platform(get,null):String;
 
@@ -29,15 +27,10 @@ class Platform
    var useNeko:Bool;
    var is64:Bool;
    var context:Dynamic;
-   var outputFiles:Array<String>;
-   var adbName:String;
-   var adbFlags:Array<String>;
-
 
    public function new(inProject:NMEProject)
    {
       project = inProject;
-      outputFiles = [];
       useNeko = project.targetFlags.exists("neko");
       is64 = false;
       if (useNeko)
@@ -48,15 +41,6 @@ class Platform
                is64 = true;
       targetDir = project.app.binDir + "/" + getPlatformDir();
       haxeDir = targetDir + "/haxe";
-   }
-
-   public function addOutput(inFile:String) : Void
-   {
-      var base = getOutputDir() + "/";
-      var l = base.length;
-      if (inFile.substr(0,l)!=base)
-         Log.error( inFile + " does not appear to be under " + base );
-      outputFiles.push( inFile.substr(l) );
    }
 
    public function init()
@@ -77,41 +61,9 @@ class Platform
    public function getAssetDir() { return getOutputDir(); }
    public function getExeDir() { return getOutputDir(); }
    public function getLibDir() { return getExeDir(); }
-   public function getHaxeTemplateDir() { return "haxe"; }
    public function getNativeDllExt() { return ".so"; }
    public function getArchSuffix() { return ""; }
    public function postBuild() { }
-
-
-
-   public function setupAdb()
-   {
-      if (adbName!=null)
-         return;
-
-      adbName = "adb";
-      if (PlatformHelper.hostPlatform == Platform.WINDOWS) 
-         adbName += ".exe";
-
-      var test = project.environment.get("ANDROID_SDK") + "/tools/" + adbName;
-      if (FileSystem.exists(test))
-         adbName = test;
-      else
-      {
-         var test = project.environment.get("ANDROID_SDK") + "/platform-tools/" + adbName;
-         if (FileSystem.exists(test))
-            adbName = test;
-         // Hmm - use relative path and hope it works
-      }
-
-      adbFlags = [];
-      if (project.targetFlags.exists("device"))
-         adbFlags = [ "-s", project.targetFlags.get("device") ];
-      else if (project.targetFlags.exists("androidsim") || project.targetFlags.exists("e"))
-         adbFlags = [ "-e" ];
-      else
-         adbFlags = [ "-d" ] ;
-   }
 
 
    public function hasArch(inArch:Architecture)
@@ -145,53 +97,19 @@ class Platform
    }
 
    public function display() { }
-
    public function install() { }
-
-   public function deploy()
-   {
-      var deploy = project.getDef("deploy");
-      if (deploy!=null)
-      {
-         var from = getOutputDir();
-
-         if (deploy.substr(0,4)=="adb:")
-         {
-            setupAdb();
-            var to = deploy.substr(4) + "/" + project.app.file;
-            trace(outputFiles);
-            for(file in outputFiles)
-            {
-               Log.verbose("adb push " + file);
-               ProcessHelper.runCommand(from,adbName, adbFlags.concat(["push", file, to+"/"+file]) );
-            }
-         }
-         else
-         {
-            var to = deploy + "/" + project.app.file;
-            for(file in outputFiles)
-            {
-               Log.verbose("copy " + file);
-               FileHelper.copyFile(from+"/"+file,to+"/"+file);
-            }
-
-         }
-      }
-   }
-
    public function prepareTest() { }
    public function run(arguments:Array<String>) { }
    public function trace() { }
    public function uninstall() { }
 
-   public function copyTemplateDir(from:String, to:String, warnIfNotFound = true, ?inForOutput=true) : Bool
+   public function copyTemplateDir(from:String, to:String, warnIfNotFound = true) : Bool
    {
-      return FileHelper.recursiveCopyTemplate(project.templatePaths, from, to, context, true, warnIfNotFound, 
-          inForOutput ? addOutput : null );
+      return FileHelper.recursiveCopyTemplate(project.templatePaths, from, to, context, true, warnIfNotFound);
    }
    public function copyTemplate(from:String, to:String)
    {
-      FileHelper.copyFileTemplate(project.templatePaths, from, to, context, addOutput);
+      FileHelper.copyFileTemplate(project.templatePaths, from, to, context);
    }
 
    public function updateBuildDir()
@@ -199,7 +117,7 @@ class Platform
       PathHelper.mkdir(targetDir);
       PathHelper.mkdir(haxeDir);
 
-      copyTemplateDir( getHaxeTemplateDir(), haxeDir, true, false );
+      copyTemplateDir("haxe", haxeDir );
    }
 
    public function updateOutputDir()
@@ -221,7 +139,6 @@ class Platform
          if (!asset.embed)
          {
             PathHelper.mkdir(Path.directory(target));
-            addOutput(target);
             FileHelper.copyAssetIfNewer(asset, target);
          }
       }
@@ -234,12 +151,9 @@ class Platform
 
    public function updateLibArch(libDir:String, archSuffix:String)
    {
-      var binName = getBinName();
-      if (binName==null)
-         return;
-
       PathHelper.mkdir(libDir);
 
+      var binName = getBinName();
       var pref = getNdllPrefix();
       for(ndll in project.ndlls) 
       {
@@ -270,7 +184,6 @@ class Platform
          if (FileSystem.exists(src)) 
          {
             var dest = libDir + "/" + pref + ndll.name + ext;
-            addOutput(dest);
 
             LogHelper.info("", " - Copying library file: " + src + " -> " + dest);
             FileHelper.copyIfNewer(src, dest);
@@ -294,7 +207,7 @@ class Platform
       {
          var output = getOutputDir();
 
-         copyTemplateDir(extra,  output );
+         copyTemplateDir(extra,  output);
       }
    }
 }

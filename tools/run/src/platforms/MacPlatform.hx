@@ -20,10 +20,7 @@ class MacPlatform extends DesktopPlatform
       contentDirectory = getAssetDir();
       executableDirectory = getExeDir();
       executablePath = executableDirectory + "/" + project.app.file;
-      addOutput(executablePath);
    }
-
-
 
    override public function getOutputExtra() { return "mac"; }
    override public function getNativeDllExt() { return ".dylib"; }

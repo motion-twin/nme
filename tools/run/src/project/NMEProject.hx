@@ -4,6 +4,7 @@ import haxe.io.Path;
 import sys.FileSystem;
 import platforms.Platform;
 
+typedef StringMap<T> = Map<String, T>;
 typedef IntMap<T> = Map<Int, T>;
 
 class AndroidConfig
@@ -76,12 +77,12 @@ class NMEProject
    public var androidConfig:AndroidConfig;
 
    // Defines
-   public var localDefines:Map<String,String>;
-   public var environment:Map<String,String>;
-   public var targetFlags:Map<String,String>;
+   public var localDefines:haxe.ds.StringMap<Dynamic>;
+   public var environment:StringMap<String>;
+   public var targetFlags:StringMap<String>;
 
    // For building haxe command line
-   public var haxedefs:Map<String, String>;
+   public var haxedefs:StringMap<Dynamic>;
    public var haxeflags:Array<String>;
    public var haxelibs:Array<Haxelib>;
    public var classPaths:Array<String>;
@@ -127,13 +128,13 @@ class NMEProject
       megaTrace = false;
       target = "";
       relocationDir = "";
-      targetFlags = new Map<String,String>();
+      targetFlags = new StringMap<String>();
       templatePaths = [];
 
       environment = Sys.environment();
       if (environment.exists("ANDROID_SERIAL"))
          targetFlags.set("device", environment.get("ANDROID_SERIAL"));
-      localDefines = new Map<String,String>();
+      localDefines = new StringMap<String>();
       for(key in environment.keys())
          Reflect.setField(baseTemplateContext, key, environment.get(key));
 
@@ -143,7 +144,7 @@ class NMEProject
 
       assets = new Array<Asset>();
       dependencies = new Array<String>();
-      haxedefs = new Map<String,String>();
+      haxedefs = new StringMap<Dynamic>();
       haxeflags = new Array<String>();
       macros = new Array<String>();
       haxelibs = new Array<Haxelib>();
@@ -179,17 +180,6 @@ class NMEProject
          case "cpp":
             target = PlatformHelper.hostPlatform;
             targetFlags.set("cpp", "");
-
-         case "cppia":
-            target = Platform.CPPIA;
-            targetFlags.set("cpp", "");
-            targetFlags.set("cppia", "");
-            haxedefs.set("cppia","");
-            addLib("cppia-vm", "lib");
-            var cp = getDef("CPPIA_CLASSPATH");
-            if (cp!=null)
-               classPaths.push(cp);
-            macros.push("--macro cppia.Vm.vmImport()");
 
          case "neko":
             target = PlatformHelper.hostPlatform;
@@ -266,11 +256,6 @@ class NMEProject
             platformType = Platform.TYPE_WEB;
             embedAssets = true;
 
-         case Platform.CPPIA:
-            platformType = Platform.TYPE_SCRIPT;
-            embedAssets = false;
-
-
          case Platform.ANDROID, Platform.IOS,
               Platform.IOSVIEW, Platform.ANDROIDVIEW:
 
@@ -307,8 +292,6 @@ class NMEProject
             localDefines.set("desktop", "1");
          case Platform.TYPE_WEB:
             localDefines.set("web", "1");
-         case Platform.TYPE_SCRIPT:
-            localDefines.set("script", "1");
       }
 
       Log.verbose("Platform type: " + platformType);
@@ -320,17 +303,6 @@ class NMEProject
       localDefines.set("haxe3", "1");
 
       localDefines.set(target.toLowerCase(), "1");
-   }
-
-   public function hasDef(inName:String)
-   {
-      return localDefines.exists(inName) || environment.exists(inName);
-   }
-   public function getDef(inName:String):String
-   {
-      if (localDefines.exists(inName))
-         return localDefines.get(inName);
-      return environment.get(inName);
    }
 
    public function checkRelocation(inDir:String)

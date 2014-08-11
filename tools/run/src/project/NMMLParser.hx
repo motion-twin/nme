@@ -631,9 +631,6 @@ class NMMLParser
                case "stdlibs":
                   project.stdLibs = element.has.value ? parseBool(substitute(element.att.value)) : true;
 
-               case "macro":
-                  project.macros.push("--macro " + substitute(element.att.value));
-
                case "java":
                   project.javaPaths.push(combine(extensionPath, substitute(element.att.path)));
 

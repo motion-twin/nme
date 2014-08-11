@@ -166,9 +166,8 @@ public:
       mErrorBuf[0] = '\0';
 
       /* some servers don't like requests that are made without a user-agent
-         field, so we provide one */
-      const char* userAgent = strcmp(r.userAgent, "") ? r.userAgent : "libcurl-agent/1.0";
-      curl_easy_setopt(mHandle, CURLOPT_USERAGENT, userAgent);
+         field, so we provide one */ 
+      curl_easy_setopt(mHandle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
 
       mState = urlLoading;
 
@@ -205,10 +204,9 @@ public:
    void SetPutBuffer(const unsigned char *inBuffer, size_t inLen)
    {
       mPutBuffer = new unsigned char[inLen];
-      mBufferRemaining = inLen;
+      mBufferRemaining = 0;
       mBufferPos = mPutBuffer;
       memcpy(mPutBuffer,inBuffer,inLen);
-      curl_easy_setopt(mHandle, CURLOPT_READDATA, this);
       curl_easy_setopt(mHandle, CURLOPT_READFUNCTION, SReadFunc);
       curl_easy_setopt(mHandle, CURLOPT_INFILESIZE, inLen);
    }

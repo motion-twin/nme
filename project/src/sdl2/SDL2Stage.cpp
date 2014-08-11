@@ -650,24 +650,7 @@ public:
     {
       SDL_SetWindowPosition( mSDLWindow, inX, inY );
     }   
- 
-   int GetWindowX() 
-   {
-      int x = 0;
-      int y = 0;
-      SDL_GetWindowPosition(mSDLWindow, &x, &y);
-      return x;
-   }   
- 
-  
-   int GetWindowY() 
-   {
-      int x = 0;
-      int y = 0;
-      SDL_GetWindowPosition(mSDLWindow, &x, &y);
-      return y;
-   }   
-
+   
    
    void EnablePopupKeyboard(bool enabled)
    {
@@ -1146,19 +1129,9 @@ void ProcessEvent(SDL_Event &inEvent)
                sgSDLFrame->ProcessEvent(resize);
                break;
             }
-            case SDL_WINDOWEVENT_MINIMIZED:
-            {
-               Event deactivate(etDeactivate);
-               sgSDLFrame->ProcessEvent(deactivate);
-               break;
-            }
+            //case SDL_WINDOWEVENT_MINIMIZED: break;
             //case SDL_WINDOWEVENT_MAXIMIZED: break;
-            case SDL_WINDOWEVENT_RESTORED:
-            {
-               Event activate(etActivate);
-               sgSDLFrame->ProcessEvent(activate);
-               break;
-            }
+            //case SDL_WINDOWEVENT_RESTORED: break;
             //case SDL_WINDOWEVENT_ENTER: break;
             //case SDL_WINDOWEVENT_LEAVE: break;
             case SDL_WINDOWEVENT_FOCUS_GAINED:
@@ -1756,10 +1729,8 @@ void StopAnimation()
 
 
 static SDL_TimerID sgTimerID = 0;
-
-
-#ifdef HX_LIME
 bool sgTimerActive = false;
+
 
 Uint32 OnTimer(Uint32 interval, void *)
 {
@@ -1780,7 +1751,6 @@ Uint32 OnTimer(Uint32 interval, void *)
    SDL_PushEvent(&event);
    return 0;
 }
-#endif
 
 
 #ifndef SDL_NOEVENT
@@ -1790,51 +1760,6 @@ Uint32 OnTimer(Uint32 interval, void *)
 
 void StartAnimation()
 {
-#ifndef HX_LIME
-   SDL_Event event;
-   event.type = SDL_NOEVENT;
-
-   double nextWake = GetTimeStamp();
-   while(!sgDead)
-   {
-      // Process real events ...
-      while(SDL_PollEvent(&event))
-      {
-         ProcessEvent(event);
-         if (sgDead)
-            break;
-         nextWake = sgSDLFrame->GetStage()->GetNextWake();
-      }
-
-      // Poll if due
-      int waitMs = (int)((nextWake - GetTimeStamp())*1000.0 + 0.5);
-      if (waitMs<=0)
-      {
-         Event poll(etPoll);
-         sgSDLFrame->ProcessEvent(poll);
-         nextWake = sgSDLFrame->GetStage()->GetNextWake();
-         if (sgDead)
-            break;
-      }
-      // Kill some time
-      else
-      {
-         // Windows will oversleep 10ms for any positive number here...
-         #ifdef HX_WINDOWS
-         if (waitMs>10)
-            SDL_Delay(1);
-         else
-            SDL_Delay(0);
-         #else
-         // TODO - check this is ok for other targets...
-         if (waitMs>10)
-            SDL_Delay(10);
-         else if (waitMs>1)
-            SDL_Delay(waitMs-1);
-         #endif
-      }
-   }
-#else
    SDL_Event event;
    bool firstTime = true;
    while(!sgDead)
@@ -1880,7 +1805,7 @@ void StartAnimation()
          }
       }
    }
-#endif
+   
    Event deactivate(etDeactivate);
    sgSDLFrame->ProcessEvent(deactivate);
    

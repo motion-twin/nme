@@ -10,8 +10,8 @@ import sys.io.Process;
 
 class Loader 
 {
-   public static var foundNdll = false;
    private static var moduleInit = false;
+   private static var foundNdll = false;
    private static var moduleName = "";
 
    #if (iphone || android || emscripten)
@@ -59,10 +59,6 @@ class Loader
 
    public static function load(func:String, args:Int):Dynamic 
    {
-      #if nme_static_link
-      return Lib.load(moduleName, func, args);
-      #end
-
       if (moduleInit) 
       {
          if (!foundNdll)
@@ -101,6 +97,20 @@ class Loader
          }
       }
 	  
+	  /*if (result == null)
+	  {
+		  var slash =(sysName().substr(7).toLowerCase() == "windows") ? "\\" : "/";
+         var haxelib = findHaxeLib("nmedev");
+
+         if (haxelib != "") 
+         {
+            result = tryLoad(haxelib + slash + "ndll" + slash + sysName() + slash + "nme", func, args);
+            // Try haxelib64 ...
+            if (result == null)
+               result = tryLoad(haxelib + slash + "ndll" + slash + sysName() + "64" + slash + "nme", func, args);
+         }
+	  }*/
+
       loaderTrace("Result : " + result );
 
       foundNdll = result!=null;

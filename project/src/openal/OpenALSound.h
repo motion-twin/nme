@@ -85,7 +85,6 @@ class OpenALChannel;
            double getPosition();
            double setPosition(const float &inFloat);
            double getLeft();
-           int getLength(const std::string &path);
            double getRight();
            void suspend();
            void resume();

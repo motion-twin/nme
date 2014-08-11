@@ -32,7 +32,6 @@
 #include <NmeBinVersion.h>
 #include <NmeStateVersion.h>
 #include <nme/NmeApi.h>
-#include <hx/CFFIPrime.h>
 
 
 #ifdef min
@@ -43,8 +42,6 @@
 
 namespace nme
 {
-void InitCamera();
-
 
 static int _id_type;
 static int _id_x;
@@ -96,7 +93,6 @@ static int _id_tabStops;
 static int _id_target;
 static int _id_underline;
 static int _id_url;
-static int _id_userAgent;
 static int _id_error;
 static int _id_state;
 static int _id_bytesTotal;
@@ -137,7 +133,6 @@ static int _id_descent;
 vkind gObjectKind;
 
 NmeApi gNmeApi;
-
 
 static int sgIDsInit = false;
 
@@ -196,7 +191,6 @@ extern "C" void InitIDs()
    _id_target = val_id("target");
    _id_underline = val_id("underline");
    _id_url = val_id("url");
-   _id_userAgent = val_id("userAgent");
    _id_error = val_id("error");
    _id_bytesTotal = val_id("bytesTotal");
    _id_state = val_id("state");
@@ -233,10 +227,6 @@ extern "C" void InitIDs()
    _id_descent = val_id("descent");
 
    kind_share(&gObjectKind,"nme::Object");
-
-   #ifndef HX_LIME
-   InitCamera();
-   #endif
 }
 
 DEFINE_ENTRY_POINT(InitIDs)
@@ -565,7 +555,6 @@ void ToValue(value &outVal,const ColorTransform &inTrans)
 void FromValue(value obj, URLRequest &request)
 {
    request.url = val_string( val_field(obj, _id_url) );
-   request.userAgent = val_string( val_field(obj, _id_userAgent) );
    request.authType = val_field_numeric(obj, _id_authType );
    request.credentials = val_string( val_field(obj, _id_credentials) );
    request.cookies = val_string( val_field(obj, _id_cookieString) );
@@ -573,7 +562,6 @@ void FromValue(value obj, URLRequest &request)
    request.contentType = val_string( val_field(obj, _id_contentType) );
    request.debug = val_field_numeric( obj, _id_verbose );
    request.postData = ByteArray( val_field(obj,_id___bytes) );
-   request.followRedirects = val_field_numeric( obj, _id_followRedirects ); 
 
    // headers
   if (!val_is_null(val_field(obj, _id_requestHeaders)) && val_array_size(val_field(obj, _id_requestHeaders)) )
@@ -632,8 +620,8 @@ value nme_time_stamp()
 {
    return alloc_float( GetTimeStamp() );
 }
+DEFINE_PRIM(nme_time_stamp,0);
 
-DEFINE_PRIM(nme_time_stamp,0)
 
 value nme_error_output(value message)
 {
@@ -1300,92 +1288,19 @@ value nme_set_stage_handler(value inStage,value inHandler,value inNomWidth, valu
 
 DEFINE_PRIM(nme_set_stage_handler,4);
 
-Stage *sgNativeHandlerStage = 0;
-
-void external_handler_native( nme::Event &ioEvent, void *inUserData )
-{
-   AutoGCRoot *handler = (AutoGCRoot *)inUserData;
-   if (ioEvent.type == etDestroyHandler)
-   {
-      delete handler;
-      return;
-   }
-
-   static AutoGCRoot *dynamicEvent = 0;
-   static nme::Event eventData;
-   static vkind eventKind;
-   if (dynamicEvent==0)
-   {
-      kind_share(&eventKind,"nme::Event");
-      value eventHolder = alloc_abstract(eventKind,&eventData);
-      dynamicEvent = new AutoGCRoot(eventHolder);
-   }
-
-   eventData = ioEvent;
-   eventData.pollTime = GetTimeStamp();
-
-   val_call1(handler->get(), dynamicEvent->get());
-
-   ioEvent.result = eventData.result;
-
-   sgNativeHandlerStage->SetNextWakeDelay(eventData.pollTime);
-}
-
-
-value nme_set_stage_handler_native(value inStage,value inHandler,value inNomWidth, value inNomHeight)
-{
-   Stage *stage;
-   if (!AbstractToObject(inStage,stage))
-      return alloc_null();
-
-   sgNativeHandlerStage = stage;
-
-   AutoGCRoot *data = new AutoGCRoot(inHandler);
-
-   stage->SetNominalSize(val_int(inNomWidth), val_int(inNomHeight) );
-   stage->SetEventHandler(external_handler_native,data);
-
-   return alloc_null();
-}
-
-DEFINE_PRIM(nme_set_stage_handler_native,4);
-
-
-value nme_stage_begin_render(value inStage,value inClear)
-{
-   Stage *stage;
-   if (AbstractToObject(inStage,stage))
-      stage->BeginRenderStage(val_bool(inClear));
-   return alloc_null();
-}
-DEFINE_PRIM(nme_stage_begin_render,2);
-
-
 
 value nme_render_stage(value inStage)
 {
    Stage *stage;
    if (AbstractToObject(inStage,stage))
+   {
       stage->RenderStage();
+   }
+
    return alloc_null();
 }
 
 DEFINE_PRIM(nme_render_stage,1);
-
-
-
-value nme_stage_end_render(value inStage)
-{
-   Stage *stage;
-   if (AbstractToObject(inStage,stage))
-      stage->EndRenderStage();
-   return alloc_null();
-}
-DEFINE_PRIM(nme_stage_end_render,1);
-
-
-
-
 
 value nme_set_render_gc_free(value inGcFree)
 {
@@ -1569,33 +1484,6 @@ value nme_stage_set_cursor_position_in_window( value inStage, value inX, value i
    return alloc_null();
 }
 DEFINE_PRIM(nme_stage_set_cursor_position_in_window,3);
-
-
-value nme_stage_get_window_x( value inStage )
-{
-   Stage *stage;
-   if (AbstractToObject(inStage,stage))
-   {
-      return alloc_int(stage->GetWindowX());
-   }
-   return alloc_int(0);
-}
-DEFINE_PRIM(nme_stage_get_window_x,1);
-
-
-value nme_stage_get_window_y( value inStage )
-{
-   Stage *stage;
-   if (AbstractToObject(inStage,stage))
-   {
-      return alloc_int(stage->GetWindowY());
-   }
-   return alloc_int(0);
-}
-DEFINE_PRIM(nme_stage_get_window_y,1);
-
-
-
 
 value nme_stage_set_window_position( value inStage, value inX, value inY ) {
 

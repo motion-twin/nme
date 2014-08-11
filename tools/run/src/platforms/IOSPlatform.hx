@@ -228,8 +228,7 @@ class IOSPlatform extends Platform
       super(inProject);
 
       for(asset in project.assets) 
-         asset.resourceName = asset.targetPath = asset.flatName;
-
+         asset.resourceName = asset.flatName;
       project.haxeflags.push('-cpp $haxeDir/cpp');
       project.haxeflags.push("-D HXCPP_CPP11");
 

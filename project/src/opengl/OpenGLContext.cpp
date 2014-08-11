@@ -32,7 +32,6 @@ static GLuint sgOpenglType[] =
   { GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRIANGLES, GL_LINE_STRIP, GL_POINTS, GL_LINES };
 
 
-void ReloadExtentions();
 
 
 // --- HardwareRenderer Interface ---------------------------------------------------------
@@ -69,7 +68,6 @@ public:
       mLineScaleH = -1;
       mThreadId = GetThreadId();
       mHasZombie = false;
-      mContextId = gTextureContextVersion;
       #if defined(NME_GLES)
       mQuality = sqLow;
       #else
@@ -120,9 +118,7 @@ public:
          mZombieTextures.push_back(inTex);
       }
       else
-      {
          glDeleteTextures(1,&inTex);
-      }
    }
 
    void DestroyVbo(unsigned int inVbo)
@@ -251,11 +247,6 @@ public:
    {
       if (!inForHitTest)
       {
-         if (mContextId!=gTextureContextVersion)
-         {
-            updateContext();
-         }
-
          #ifndef NME_GLES
          #ifndef SDL_OGL
          #ifndef GLFW_OGL
@@ -275,7 +266,7 @@ public:
 
             if (mZombieVbos.size())
             {
-               glDeleteBuffers(mZombieVbos.size(),&mZombieVbos[0]);
+               glDeleteTextures(mZombieVbos.size(),&mZombieVbos[0]);
                mZombieVbos.resize(0);
             }
 
@@ -328,21 +319,6 @@ public:
    void EndRender()
    {
 
-   }
-
-   void updateContext()
-   {
-      mContextId = gTextureContextVersion;
-      mThreadId = GetThreadId();
-      mHasZombie = false;
-      mZombieTextures.resize(0);
-      mZombieVbos.resize(0);
-      mZombiePrograms.resize(0);
-      mZombieShaders.resize(0);
-      mZombieFramebuffers.resize(0);
-      mZombieRenderbuffers.resize(0);
-
-      ReloadExtentions();
    }
 
 
@@ -783,7 +759,6 @@ public:
    int mWidth,mHeight;
    Matrix mModelView;
    ThreadId mThreadId;
-   int mContextId;
 
    double mLineScaleV;
    double mLineScaleH;
@@ -894,14 +869,16 @@ DEFINE_PRIM (nme_gl_s3d_get_eye_separation,0);
 
 void * gOGLLibraryHandle = 0;
 
-static bool extentions_init = false;
-
 bool InitOGLFunctions()
 {
+   static bool extentions_init = false;
    static bool result = true;
    if (!extentions_init)
    {
       extentions_init = true;
+      #if defined(HX_WINDOWS) && !defined(SDL_OGL)
+         wglMakeCurrent( (WinDC)inWindow,(GLCtx)inGLCtx);
+      #endif
 
       #ifdef HX_LINUX
       gOGLLibraryHandle = dlopen("libGL.so.1", RTLD_NOW|RTLD_GLOBAL);
@@ -924,16 +901,6 @@ bool InitOGLFunctions()
    return result;
 }
 
-void ReloadExtentions()
-{
-   // Spec says this might be required - but do not think so in practice
-   /*
-   #ifdef ANDROID
-   extentions_init = false;
-   InitOGLFunctions();
-   #endif
-   */
-}
 
 
 

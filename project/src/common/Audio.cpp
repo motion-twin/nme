@@ -171,12 +171,7 @@ namespace nme
 			#ifdef ANDROID
 			FileInfo info = AndroidGetAssetFD(filename.c_str());
 			FILE *f = fdopen(info.fd, "rb");
-			
-			if(f) 
-			{
-			    fseek(f, info.offset, 0);
-			}
-			
+			fseek(f, info.offset, 0);
 			#else
 			FILE *f = fopen(filename.c_str(), "rb");
 			#endif

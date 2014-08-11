@@ -2,8 +2,6 @@
 #include <Surface.h>
 #include <math.h>
 
-#include "TextField.h"
-
 #ifndef M_PI
 #define M_PI 3.1415926535897932385
 #endif
@@ -1905,12 +1903,6 @@ void Stage::HandleEvent(Event &inEvent)
             mMouseDownObject = hit_obj;
          }
       }
-      if (inEvent.type==etMouseUp && (inEvent.value==3 || inEvent.value==4) )
-      {
-         TextField *text =  dynamic_cast<TextField *>(hit_obj);
-         if (text && text->mouseWheelEnabled)
-            text->OnScrollWheel(inEvent.value==3 ? -1 : 1);
-      }
    }
    #if defined(IPHONE) || defined(ANDROID) || defined(WEBOS) || defined(TIZEN)
    else if (inEvent.type==etMouseClick ||  inEvent.type==etMouseDown ||
@@ -2072,8 +2064,6 @@ int Stage::GetAA()
 }
 
 
-#ifdef HX_LIME // {
-
 void Stage::RenderStage()
 {
    ColorTransform::TidyCache();
@@ -2139,49 +2129,6 @@ void Stage::RenderStage()
 
    // Clear alpha masks
 }
-void Stage::BeginRenderStage(bool) { }
-void Stage::EndRenderStage() { }
-
-#else  // } nme(not lime) split render stage into 3 phases .. {
-
-void Stage::BeginRenderStage(bool inClear)
-{
-   Surface *surface = GetPrimarySurface();
-   currentTarget = surface->BeginRender( Rect(surface->Width(),surface->Height()),false );
-   if (inClear)
-      surface->Clear( (opaqueBackground | 0xff000000) & getBackgroundMask() );
-}
-
-void Stage::RenderStage()
-{
-   ColorTransform::TidyCache();
-   
-   if (currentTarget.IsHardware())
-      currentTarget.mHardware->SetQuality(quality);
-
-   RenderState state(0, GetAA() );
-
-   state.mTransform.mMatrix = &mStageScale;
-
-   state.mClipRect = Rect( currentTarget.Width(), currentTarget.Height() );
-
-   state.mPhase = rpBitmap;
-   state.mRoundSizeToPOW2 = currentTarget.IsHardware();
-   Render(currentTarget,state);
-
-   state.mPhase = rpRender;
-   Render(currentTarget,state);
-}
-
-void Stage::EndRenderStage()
-{
-   currentTarget = RenderTarget();
-   GetPrimarySurface()->EndRender();
-   Flip();
-}
-
- 
-#endif // }
 
 double Stage::getStageWidth()
 {

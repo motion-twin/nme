@@ -569,12 +569,6 @@ void TextField::Drag(Event &inEvent)
 
 void TextField::EndDrag(Event &inEvent)
 {
-
-}
-
-void TextField::OnScrollWheel(int inDirection)
-{
-   setScrollV(scrollV + inDirection);
 }
 
 void TextField::OnChange()
@@ -945,7 +939,7 @@ WString TextField::getHTMLText()
 // Not sure why I need these now?
 int MySSCAND(const wchar_t *inStr, int *outValue)
 {
-   #ifdef ANDROID
+   #if ANDROID
    int sign = 1;
    int result = 0;
    const wchar_t *oStr = inStr;
@@ -969,7 +963,7 @@ int MySSCAND(const wchar_t *inStr, int *outValue)
 
 int MySSCANHex(const wchar_t *inStr, int *outValue)
 {
-   #ifdef ANDROID
+   #if ANDROID
    int result = 0;
    const wchar_t *oStr = inStr;
    while( (*inStr>='0' && *inStr<='9') ||

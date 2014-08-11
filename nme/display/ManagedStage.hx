@@ -2,8 +2,6 @@ package nme.display;
 #if (cpp || neko)
 
 import nme.Loader;
-import nme.app.Window;
-import nme.app.RenderReason;
 
 class ManagedStage extends Stage 
 {
@@ -39,8 +37,7 @@ class ManagedStage extends Stage
 
    public function new(inWidth:Int, inHeight:Int, inFlags:Int = 0) 
    {
-      var managedWindow = new Window( nme_managed_stage_create(inWidth, inHeight, inFlags), inWidth, inHeight );
-      super(managedWindow);
+      super(nme_managed_stage_create(inWidth, inHeight, inFlags), inWidth, inHeight);
    }
 
    dynamic public function beginRender() 
@@ -51,22 +48,19 @@ class ManagedStage extends Stage
    {
    }
 
-   /*
-   override function nmeProcessStageEvent(inEvent:Dynamic):Float 
+   override function nmeDoProcessStageEvent(inEvent:Dynamic):Float 
    {
       nmePollTimers();
 
-      var wake = super.nmeProcessStageEvent(inEvent);
+      var wake = super.nmeDoProcessStageEvent(inEvent);
       setNextWake(wake);
 
       return wake;
    }
-   */
 
-   override public function onRender(inReason:RenderReason)
-   {
+   /** @private */ override public function nmeRender(inSendEnterFrame:Bool) {
       beginRender();
-      super.onRender(inReason);
+      super.nmeRender(inSendEnterFrame);
       endRender();
    }
 

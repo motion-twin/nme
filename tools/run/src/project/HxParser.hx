@@ -38,7 +38,6 @@ class HxParser
       {
          var content = File.getContent(inFilename);
          var metaMatch = ~/^\s*\/\/\s*nme:\s*(\S*)\s*=(.*)/;
-         var isApplication = ~/extends\s+NmeApplication/;
          var quotes = ~/^"(.*)"$/;
          for(line in content.split("\n"))
          {
@@ -49,10 +48,6 @@ class HxParser
                if (quotes.match(value))
                   value = quotes.matched(1);
                setValue(key,value);
-            }
-            if (isApplication.match(line))
-            {
-               project.haxedefs.set("nme_application","1");
             }
          }
       }

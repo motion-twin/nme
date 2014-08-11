@@ -2,17 +2,17 @@
 
 // 0xAARRGGBB
 #if defined(ANDROID) || defined(EMSCRIPTEN)
-   #define ARGB_STORE GL_BGRA_EXT
-   #define ARGB_PIXEL GL_BGRA_EXT
+#define ARGB_STORE GL_BGRA_EXT
+#define ARGB_PIXEL GL_BGRA_EXT
 #elif defined(IPHONE)
-   #define ARGB_STORE GL_RGBA
-   #define ARGB_PIXEL GL_BGRA
+#define ARGB_STORE GL_RGBA
+#define ARGB_PIXEL GL_BGRA
 #elif defined(NME_GLES)
-   #define ARGB_STORE GL_BGRA
-   #define ARGB_PIXEL GL_BGRA
+#define ARGB_STORE GL_BGRA
+#define ARGB_PIXEL GL_BGRA
 #else
-   #define ARGB_STORE GL_RGBA
-   #define ARGB_PIXEL GL_BGRA
+#define ARGB_STORE GL_RGBA
+#define ARGB_PIXEL GL_BGRA
 #endif
 
 //Constant Value:  32993 
@@ -104,7 +104,6 @@ class OGLTexture : public Texture
    bool mCanRepeat;
    bool mRepeat;
    bool mSmooth;
-   bool mMultiplyAlphaOnLoad;
    int mPixelWidth;
    int mPixelHeight;
    int mTextureWidth;
@@ -136,8 +135,7 @@ public:
       mTextureHeight = h;
       bool usePreAlpha = inFlags & surfUsePremultipliedAlpha;
       bool hasPreAlpha = inFlags & surfHasPremultipliedAlpha;
-      mMultiplyAlphaOnLoad = usePreAlpha && !hasPreAlpha;
-      int *multiplyAlpha = mMultiplyAlphaOnLoad ? getAlpha16Table() : 0;
+      int *multiplyAlpha = usePreAlpha && !hasPreAlpha ? getAlpha16Table() : 0;
 
       bool copy_required = mSurface->GetBase() &&
            (w!=mPixelWidth || h!=mPixelHeight || multiplyAlpha );
@@ -221,23 +219,24 @@ public:
       }
 
 
-      mTextureID = 0;
       glGenTextures(1, &mTextureID);
       // __android_log_print(ANDROID_LOG_ERROR, "NME", "CreateTexture %d (%dx%d)",
       //  mTextureID, mPixelWidth, mPixelHeight);
       glBindTexture(GL_TEXTURE_2D,mTextureID);
       mRepeat = mCanRepeat;
-      mSmooth = true;
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, mRepeat ? GL_REPEAT : GL_CLAMP_TO_EDGE );
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, mRepeat ? GL_REPEAT : GL_CLAMP_TO_EDGE );
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
 
       glTexImage2D(GL_TEXTURE_2D, 0, store_format, w, h, 0, pixel_format, pixels, buffer);
 
       if (buffer && buffer!=mSurface->Row(0))
          free(buffer);
 
+
+      mSmooth = true;
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
       //int err = glGetError();
       //printf ("GL texture error: %i\n", err);
@@ -259,10 +258,8 @@ public:
          glActiveTexture(GL_TEXTURE0 + inSlot);
       }
       glBindTexture(GL_TEXTURE_2D,mTextureID);
-
       if (gTextureContextVersion!=mContextVersion)
       {
-         ELOG("######## Error stale texture");
          mContextVersion = gTextureContextVersion;
          mDirtyRect = Rect(mSurface->Width(),mSurface->Height());
       }
@@ -271,98 +268,70 @@ public:
          //__android_log_print(ANDROID_LOG_INFO, "NME", "UpdateDirtyRect! %d %d",
              //mPixelWidth, mPixelHeight);
 
-
          PixelFormat fmt = mSurface->Format();
          int pw = fmt == pfAlpha ? 1 : 4;
+         glGetError();
 
          int x0 = mDirtyRect.x;
          int y0 = mDirtyRect.y;
          int dw = mDirtyRect.w;
          int dh = mDirtyRect.h;
 
-         
-         bool needsCopy = mMultiplyAlphaOnLoad;
          #if defined(NME_GLES)
-         needsCopy = true;
-         #endif
 
-         if (needsCopy)
+         GLuint pixel_format = fmt==pfAlpha ? GL_ALPHA : ARGB_STORE;
+
+         uint8 *buffer = 0;
+         if (pw==1)
          {
-            GLuint pixel_format = fmt==pfAlpha ? GL_ALPHA : ARGB_PIXEL;
-   
-            uint8 *buffer = 0;
-            if (pw==1)
+            // Make unpack align a multiple of 4 ...
+            if (mSurface->Width()>3)
             {
-               // Make unpack align a multiple of 4 ...
-               if (mSurface->Width()>3)
-               {
-                  dw = (dw + 3) & ~3;
-                  if (x0+dw>mSurface->Width())
-                     x0 = mSurface->Width()-dw;
-               }
-   
-               const uint8 *p0 = mSurface->Row(y0) + x0*pw;
-               buffer = (uint8 *)malloc(pw * dw * dh);
-               for(int y=0;y<dh;y++)
-               {
-                  memcpy(buffer + y*dw, p0, dw);
-                  p0 += mSurface->GetStride();
-               }
-            }
-            else
-            {
-               int *multiplyAlpha = mMultiplyAlphaOnLoad ? getAlpha16Table() : 0;
-   
-               buffer = (uint8 *)malloc(pw * dw * dh);
-               const uint8 *p0 = mSurface->Row(y0) + x0*pw;
-               for(int y=0;y<mDirtyRect.h;y++)
-               {
-                  uint8 *dest = buffer + y*dw*pw;
-                  if (multiplyAlpha && pw==4)
-                  {
-                     for(int x=0;x<dw;x++)
-                     {
-                        int a16 = multiplyAlpha[p0[3]];
-                        dest[0] = (p0[0]*a16)>>16;
-                        dest[1] = (p0[1]*a16)>>16;
-                        dest[2] = (p0[2]*a16)>>16;
-                        dest[3] = p0[3];
-                        dest+=4;
-                        p0+=4;
-                     }
-                     p0 += mSurface->GetStride() - dw*4;
-                  }
-                  else
-                  {
-                     memcpy(dest, p0, dw*pw);
-                     p0 += mSurface->GetStride();
-                  }
-               }
+               dw = (dw + 3) & ~3;
+               if (x0+dw>mSurface->Width())
+                  x0 = mSurface->Width()-dw;
             }
 
-            glTexSubImage2D(GL_TEXTURE_2D, 0,
-               x0, y0,
-               dw, dh, 
-               pixel_format, GL_UNSIGNED_BYTE,
-               buffer );
-            free(buffer);
+            const uint8 *p0 = mSurface->Row(y0) + x0*pw;
+            buffer = (uint8 *)malloc(pw * dw * dh);
+            for(int y=0;y<dh;y++)
+            {
+               memcpy(buffer + y*dw, p0, dw);
+               p0 += mSurface->GetStride();
+            }
          }
          else
          {
-            #ifndef NME_GLES
-            GLuint pixel_format = fmt==pfAlpha ? GL_ALPHA : ARGB_PIXEL;
-   
+            // TODO: pre-alpha ?
+            buffer = (uint8 *)malloc(pw * dw * dh);
             const uint8 *p0 = mSurface->Row(y0) + x0*pw;
-            glPixelStorei(GL_UNPACK_ROW_LENGTH, mSurface->Width());
-            glTexSubImage2D(GL_TEXTURE_2D, 0,
-               x0, y0,
-               dw, dh,
-               pixel_format, GL_UNSIGNED_BYTE,
-               p0);
-            glPixelStorei(GL_UNPACK_ROW_LENGTH,0);
-            #endif
+            for(int y=0;y<mDirtyRect.h;y++)
+            {
+               memcpy(buffer + y*dw*pw, p0, dw*pw);
+               p0 += mSurface->GetStride();
+            }
          }
-            int err = glGetError();
+
+         glTexSubImage2D(GL_TEXTURE_2D, 0,
+            x0, y0,
+            dw, dh, 
+            pixel_format, GL_UNSIGNED_BYTE,
+            buffer );
+         free(buffer);
+         #else
+
+         GLuint pixel_format = fmt==pfAlpha ? GL_ALPHA : ARGB_PIXEL;
+
+         const uint8 *p0 = mSurface->Row(y0) + x0*pw;
+         glPixelStorei(GL_UNPACK_ROW_LENGTH, mSurface->Width());
+         glTexSubImage2D(GL_TEXTURE_2D, 0,
+            x0, y0,
+            dw, dh,
+            pixel_format, GL_UNSIGNED_BYTE,
+            p0);
+         glPixelStorei(GL_UNPACK_ROW_LENGTH,0);
+         #endif
+         int err = glGetError();
          if (err != GL_NO_ERROR) {
           ELOG("GL Error: %d %dx%d", err, mDirtyRect.w, mDirtyRect.h);
          }

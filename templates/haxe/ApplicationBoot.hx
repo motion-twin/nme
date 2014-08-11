@@ -19,7 +19,7 @@ class ApplicationBoot
       return Context.parse("false", p);
    }
 
-   macro public static function createInstance(inDefaultName:String = "ApplicationDocument")
+   macro public static function createInstance()
    {
       var p = Context.currentPos();
 
@@ -33,7 +33,7 @@ class ApplicationBoot
          default:
       }
 
-      return Context.parse("new " + inDefaultName + "()", p);
+      return Context.parse("new ApplicationDocument()", p);
    }
 
 }

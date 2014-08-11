@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <vector>
 
-namespace nme {
+namespace lime {
 	
 	
 	std::string CapabilitiesGetLanguage () {

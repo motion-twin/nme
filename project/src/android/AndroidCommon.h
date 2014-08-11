@@ -5,7 +5,6 @@
 #include <pthread.h>
 #include <android/log.h>
 #include <hx/CFFI.h>
-#include <string>
 
 
 #ifdef __GNUC__
@@ -37,6 +36,5 @@ struct AutoHaxe
 JNIEnv *GetEnv();
 jclass FindClass(const char *className,bool inQuiet = false);
 void CheckException(JNIEnv *env, bool inThrow=true);
-std::string JStringToStdString(JNIEnv *env, jstring inString, bool inReleaseLocalRef);
 
 #endif

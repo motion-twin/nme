@@ -37,8 +37,6 @@ class Assets
    public static var info = new Map<String,AssetInfo>();
    public static var cacheMode:Int = WEAK_CACHE;
 
-   public static var scriptBase = "";
-
    //public static var id(get_id, null):Array<String>;
 
    public static function getAssetPath(inName:String) : String
@@ -202,12 +200,9 @@ class Assets
       }
       if (useCache!=false)
       {
-         var val:ByteArray = i.getCache();
+         var val = i.getCache();
          if (val!=null)
-         {
-            val.position = 0;
             return val;
-         }
       }
 
       var data:ByteArray = null;
@@ -393,20 +388,14 @@ class Assets
        return getText(id,useCache);
    }
 
-  #if !flash
    private static var initResources:Dynamic = (function() {
        var nme_set_resource_factory = nme.Loader.load("nme_set_resource_factory", 1);
-       if (nme_set_resource_factory!=null)
-           nme_set_resource_factory(function(s) {
-             var reso = haxe.Resource.getBytes(s);
-             if (reso==null) return null;
-             return ByteArray.fromBytes(reso);
+       nme_set_resource_factory(function(s) {
+         var reso = haxe.Resource.getBytes(s);
+         if (reso==null) return null;
+         return ByteArray.fromBytes(reso);
          });
       return null; } ) ();
-  #end
-
-
-  public static function initialize() {}
 
 
 }

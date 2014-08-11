@@ -151,7 +151,6 @@ public:
    void Drag(Event &inEvent);
    void EndDrag(Event &inEvent);
    void OnKey(Event &inEvent);
-   void OnScrollWheel(int inDirection);
    void DeleteSelection();
    void DeleteChars(int inFirst,int inEnd);
    void InsertString(WString &ioString);

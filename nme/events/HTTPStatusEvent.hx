@@ -1,7 +1,7 @@
 package nme.events;
 #if (cpp || neko)
 
-import nme.net.URLRequestHeader;
+import flash.net.URLRequestHeader;
 
 class HTTPStatusEvent extends Event 
 {

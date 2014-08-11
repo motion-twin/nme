@@ -6,7 +6,6 @@ import sys.io.Process;
 import sys.FileSystem;
 import platforms.Platform;
 import nme.system.System;
-import nme.Loader;
 import nme.net.SharedObject;
 import NMEProject;
 
@@ -34,13 +33,13 @@ class CommandLineTools
    static var allTargets = 
           [ "cpp", "neko", "ios", "iphone", "iphoneos", "iosview", "ios-view",
             "androidview", "android-view", "iphonesim", "android", "androidsim",
-            "windows", "mac", "linux", "flash", "cppia" ];
+            "windows", "mac", "linux", "flash" ];
    static var allCommands = 
           [ "help", "setup", "document", "generate", "create", "xcode", "clone", "demo",
              "installer", "copy-if-newer", "tidy", "set", "unset",
             "clean", "update", "build", "run", "rerun", "install", "uninstall", "trace", "test" ];
-   static var setNames =  [ "target", "bin", "command", "cppiaHost", "cppiaClassPath" ];
-   static var setNamesHelp =  [ "default when no target is specifiec", "alternate location for binary files", "default command to run", "executable for running cppia code", "additional class path when building cppia" ];
+   static var setNames =  [ "target", "bin", "command" ];
+   static var setNamesHelp =  [ "default when no target is specifiec", "alternate location for binary files", "default command to run" ];
    static var quickSetNames =  [ "debug", "verbose" ];
 
 
@@ -84,9 +83,6 @@ class CommandLineTools
 
          case Platform.FLASH:
             platform = new platforms.FlashPlatform(project);
-
-         case Platform.CPPIA:
-            platform = new platforms.CppiaPlatform(project);
       }
       if (platform != null) 
       {
@@ -132,7 +128,6 @@ class CommandLineTools
             {
                platform.buildPackage();
                platform.postBuild();
-               platform.deploy();
             }
          }
 
@@ -863,9 +858,9 @@ class CommandLineTools
 
       project.checkRelocation( new Path(projectFile).dir );
 
-      project.haxedefs.set("nme_install_tool", "1");
+      project.haxedefs.set("nme_install_tool", 1);
       project.haxedefs.set("nme_ver", nmeVersion);
-      project.haxedefs.set("nme" + nmeVersion.split(".")[0], "1");
+      project.haxedefs.set("nme" + nmeVersion.split(".")[0], 1);
 
       project.setTarget(targetName);
 
@@ -1015,39 +1010,10 @@ class CommandLineTools
       }
    }
 
-   static function buildNdll()
-   {
-      Sys.println("The binary nme.ndll is not distrubuted with source code, and is not built for your system yet.");
-      while(true)
-      {
-         Sys.print("Would you like to build it now Y/n ? >");
-         var result = Sys.stdin().readLine();
-         if (result.substr(0,1).toLowerCase()=="n")
-            return;
-         if (result.substr(0,1).toLowerCase()=="y" || result=="")
-         {
-            Sys.println("Update nme-dev...");
-            ProcessHelper.runCommand("", "haxelib", ["update","nme-dev"]);
-            Sys.println("Build binaries...");
-            ProcessHelper.runCommand(nme + "/project", "neko", ["build.n"] );
-            Sys.println("\nPlease re-run nme");
-            return;
-         }
-      }
-   }
-
 
 
    public static function main():Void 
    {
-      nme = PathHelper.getHaxelib(new Haxelib("nme"));
-
-      if (!Loader.foundNdll)
-      {
-         buildNdll();
-         return;
-      }
-
       var project = new NMEProject( );
 
       traceEnabled = null;
@@ -1073,10 +1039,6 @@ class CommandLineTools
          project.debug = debug = true;
          Log.verbose("Using debug option from setting");
       }
-      if (storeData.cppiaClassPath!=null)
-         project.localDefines.set("CPPIA_CLASSPATH", storeData.cppiaClassPath);
-      if (storeData.cppiaHost!=null)
-         project.localDefines.set("CPPIA_HOST", storeData.cppiaHost);
 
 
       // Haxelib bug
@@ -1134,7 +1096,6 @@ class CommandLineTools
             createTemplate();
 
          case "xcode":
-            Sys.putEnv("HXCPP_NO_COLOUR","1");
             if (Sys.getEnv("NME_ALREADY_BUILDING")=="BUILDING")
                Sys.println("...already building");
             else
@@ -1162,6 +1123,8 @@ class CommandLineTools
    private static function processArguments(project:NMEProject):Void 
    {
       var arguments = Sys.args();
+
+      nme = PathHelper.getHaxelib(new Haxelib("nme"));
 
       var lastCharacter = nme.substr( -1, 1);
       if (lastCharacter == "/" || lastCharacter == "\\") 
@@ -1249,7 +1212,7 @@ class CommandLineTools
             }
             else
             {
-               project.localDefines.set(argument.substr(0, equals), argValue);
+               project.haxedefs.set(argument.substr(0, equals), argValue);
             }
          }
          else if (argument.substr(0, 1) == "-") 

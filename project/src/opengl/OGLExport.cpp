@@ -1029,9 +1029,6 @@ value nme_gl_uniform4iv(value inLocation,value inArray)
 }
 DEFINE_PRIM(nme_gl_uniform4iv,2);
 
-
-
-
 value nme_gl_uniform1fv(value inLocation,value inArray)
 {
    NmeFloats floats(inArray);
@@ -1040,8 +1037,6 @@ value nme_gl_uniform1fv(value inLocation,value inArray)
    return alloc_null();
 }
 DEFINE_PRIM(nme_gl_uniform1fv,2);
-
-
 
 value nme_gl_uniform2fv(value inLocation,value inArray)
 {

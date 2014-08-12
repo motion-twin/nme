@@ -39,6 +39,7 @@ enum ResoType
 };
 
 
+
 struct NmeFloats
 {
    int   floatCount;
@@ -97,6 +98,39 @@ struct NmeFloats
          delete [] data;
    }
 };
+
+struct NmeInts
+{
+   int   count;
+   int   *data;
+
+   NmeInts(value inArray)
+   {
+      count = 0;
+      data = 0;
+
+      if (val_is_array(inArray))
+      {
+         count = val_array_size(inArray);
+		 int *i = val_array_int(inArray);
+		 if( i ) 
+			data = i;
+		 else {
+			//error
+		 }
+      }
+      else
+      {
+         ByteArray bytes(inArray);
+         data = (int *)bytes.Bytes();
+         count = bytes.Size()/sizeof(int);
+      }
+   }
+   
+   ~NmeInts(){      
+   }
+};
+
 
 
 // #define CHECK_ERROR
@@ -961,44 +995,36 @@ GL_UNFORM_4(f,val_number)
 
 value nme_gl_uniform1iv(value inLocation,value inArray)
 {
-   int *i = val_array_int(inArray);
-   if (i)
-      glUniform1iv(val_int(inLocation),1,i);
-   else
-      nme_gl_uniform1i(inLocation,val_array_i(inArray,0));
+   NmeInts ints(inArray);
+   if (ints.count>0)
+      glUniform1iv(val_int(inLocation),ints.count,ints.data);
    return alloc_null();
 }
 DEFINE_PRIM(nme_gl_uniform1iv,2);
 
 value nme_gl_uniform2iv(value inLocation,value inArray)
 {
-   int *i = val_array_int(inArray);
-   if (i)
-      glUniform2iv(val_int(inLocation),1,i);
-   else
-      nme_gl_uniform2i(inLocation,val_array_i(inArray,0),val_array_i(inArray,1));
+   NmeInts ints(inArray);
+   if (ints.count>0)
+      glUniform2iv(val_int(inLocation),ints.count>>1,ints.data);
    return alloc_null();
 }
 DEFINE_PRIM(nme_gl_uniform2iv,2);
 
 value nme_gl_uniform3iv(value inLocation,value inArray)
 {
-   int *i = val_array_int(inArray);
-   if (i)
-      glUniform3iv(val_int(inLocation),1,i);
-   else
-      nme_gl_uniform3i(inLocation,val_array_i(inArray,0),val_array_i(inArray,1),val_array_i(inArray,2));
+  NmeInts ints(inArray);
+   if (ints.count>0)
+      glUniform3iv(val_int(inLocation),ints.count/3,ints.data);
    return alloc_null();
 }
 DEFINE_PRIM(nme_gl_uniform3iv,2);
 
 value nme_gl_uniform4iv(value inLocation,value inArray)
 {
-   int *i = val_array_int(inArray);
-   if (i)
-      glUniform4iv(val_int(inLocation),1,i);
-   else
-      nme_gl_uniform4i(inLocation,val_array_i(inArray,0),val_array_i(inArray,1),val_array_i(inArray,2),val_array_i(inArray,3));
+   NmeInts ints(inArray);
+   if (ints.count>0)
+      glUniform4iv(val_int(inLocation),ints.count>>2,ints.data);
    return alloc_null();
 }
 DEFINE_PRIM(nme_gl_uniform4iv,2);

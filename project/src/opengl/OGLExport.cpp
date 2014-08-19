@@ -1005,8 +1005,7 @@ value nme_gl_uniform1iv(value inLocation,value inArray)
    NmeInts ints(inArray);
    if (ints.count>0){
       glUniform1iv(val_int(inLocation),ints.count,ints.data);
-	 // printf("%d %d %d %d", ints.data[0],ints.data[1],ints.data[2],ints.data[3]);
-	  }
+   }
    return alloc_null();
 }
 DEFINE_PRIM(nme_gl_uniform1iv,2);

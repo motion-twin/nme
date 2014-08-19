@@ -405,6 +405,11 @@ value nme_gl_get_parameter(value pname_val)
       // case GL_TEXTURE_BINDING_2D  WebGLTexture
       // case GL_TEXTURE_BINDING_CUBE_MAP  WebGLTexture
 
+	case GL_FRAMEBUFFER_BINDING  : ints = 1; break;
+	case GL_RENDERBUFFER_BINDING  : ints = 1; break;
+	case GL_TEXTURE_BINDING_2D  : ints = 1; break;
+
+	  
       case GL_DEPTH_CLEAR_VALUE:
       case GL_LINE_WIDTH:
       case GL_POLYGON_OFFSET_FACTOR:
@@ -996,8 +1001,10 @@ GL_UNFORM_4(f,val_number)
 value nme_gl_uniform1iv(value inLocation,value inArray)
 {
    NmeInts ints(inArray);
-   if (ints.count>0)
+   if (ints.count>0){
       glUniform1iv(val_int(inLocation),ints.count,ints.data);
+	 // printf("%d %d %d %d", ints.data[0],ints.data[1],ints.data[2],ints.data[3]);
+	  }
    return alloc_null();
 }
 DEFINE_PRIM(nme_gl_uniform1iv,2);
@@ -1025,6 +1032,7 @@ value nme_gl_uniform4iv(value inLocation,value inArray)
    NmeInts ints(inArray);
    if (ints.count>0)
       glUniform4iv(val_int(inLocation),ints.count>>2,ints.data);
+	
    return alloc_null();
 }
 DEFINE_PRIM(nme_gl_uniform4iv,2);

@@ -221,6 +221,8 @@ value createResource(unsigned int inResource, ResoType inType)
    return result;
 }
 
+static int screenBuffer = -1;
+
 void releaseResource(value inValue)
 {
    NmeResource *resource = 0;
@@ -1446,10 +1448,15 @@ DEFINE_PRIM(nme_gl_get_buffer_parameter,2);
 value nme_gl_bind_framebuffer(value target, value framebuffer)
 {
    DBGFUNC("bindFramebuffer");
-   if (CHECK_EXT(glBindFramebuffer))
-   {
-      int id = getResource(framebuffer,resoFramebuffer);
-      glBindFramebuffer(val_int(target), id );
+   if (CHECK_EXT(glBindFramebuffer)){
+		if( screenBuffer == -1 ) screenBuffer = val_int(nme_gl_get_parameter( alloc_int(GL_FRAMEBUFFER_BINDING )));
+	   
+		if( val_is_null(framebuffer) )
+			glBindFramebuffer(val_int(target), screenBuffer );
+		else {
+			int id = getResource(framebuffer,resoFramebuffer);
+			glBindFramebuffer(val_int(target), id );
+		}
    }
    return alloc_null();
 }
